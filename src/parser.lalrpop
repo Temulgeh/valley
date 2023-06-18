@@ -1,0 +1,63 @@
+use std::str::FromStr;
+use crate::ast::*;
+
+grammar;
+
+
+pub Statement: Box<AST> = { Decl, Expr }
+
+Decl: Box<AST> = {
+    "let" <Name> => Box::new(AST::Decl(<>)),
+    "let" <name:Name> <w:Walrus> <r:RValue> => Box::new(AST::ASTs(vec![
+        Box::new(AST::Decl(name.clone())),
+        Box::new(AST::BinOp(Box::new(AST::ID(name)), w, r))
+    ]))
+}
+
+
+Expr: Box<AST> = { Assign, RValue }
+
+Assign: Box<AST> = LValue AssignOp RValue => Box::new(AST::BinOp(<>));
+
+AssignOp: Op = {
+    Walrus
+}
+
+Walrus: Op = ":=" => Op::Assign;
+
+// for now it's just IDs, will have more things when references are implemented
+LValue: Box<AST> = ID;
+
+RValue: Box<AST> = {
+    <RValue> <RValueOp> <Term> => Box::new(AST::BinOp(<>)),
+    Term
+}
+
+RValueOp: Op = {
+    "+" => Op::Plus,
+    "-" => Op::Minus
+}
+
+Term: Box<AST> = {
+    <Term> <TermOp> <Factor> => Box::new(AST::BinOp(<>)),
+    Factor
+}
+
+TermOp: Op = {
+    "*" => Op::Times,
+    "/" => Op::DivBy
+}
+
+Factor: Box<AST> = {
+    Num,
+    ID,
+    "(" <Expr> ")"
+}
+
+ID: Box<AST> = Name => Box::new(AST::ID(<>));
+
+
+Num: Box<AST> = r"[0-9]+" => Box::new(AST::Value(i32::from_str(<>).unwrap()));
+
+Name: String = 
+    r"[\w\p{Emoji}--0-9][\w\p{Emoji}']*" => <>.to_string();

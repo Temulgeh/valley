@@ -1,29 +1,20 @@
-use std::io::{self, Write};
+#[macro_use]
+extern crate lalrpop_util;
 
-
-mod token;
+mod types;
 mod ast;
+mod check;
+mod interpreter;
+mod repl;
+lalrpop_mod!(parser);
 
 
 fn main() {
-    // TODO: somehow stop execution if user is piping text
-    display_title("valley - tokenizer test");
-    while let Some(input) = query_input() {
-        println!("{:?}\n", token::TokenIter::new(input.chars()))
-    }
+    display_title("valley - LALRPOP test");
+    repl::start_repl_loop();
 }
 
 fn display_title(title: &str) {
     let bar = "═".repeat(title.len() + 2);
     println!("\n╒{bar}╕\n│ {title} │\n╘{bar}╛\n");
-}
-
-fn query_input() -> Option<String> {
-    print!("> ");
-    io::stdout().flush().unwrap();
-    let mut line = String::new();
-    io::stdin()
-        .read_line(&mut line)
-        .ok()
-        .and(Some(line))
 }
